@@ -12,12 +12,12 @@ private:
 	float _CO2;
 
 public:
-	CAirQuality(int id, int pin);
+	CAirQuality(int id, string pin);
 	~CAirQuality();
 
 	void initialiser();
 
-	void getValues();
+	bool getValues();
 	float lireTemperature() const;
 	float lireHumidity() const;
 	float lireCO2() const;

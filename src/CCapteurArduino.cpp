@@ -1,6 +1,6 @@
 #include "../include/CCapteurArduino.h"
 
-CCapteurArduino::CCapteurArduino(int id, int pin) : _id(id), _pin(pin), _isConnected(false), _pinmode(false)
+CCapteurArduino::CCapteurArduino(int id, string pin) : _id(id), _pin(pin), _isConnected(false), _pinmode(false)
 {
 	_value[0] = _value[1] = _value[2] = 0.0f;
 }
@@ -18,7 +18,7 @@ int CCapteurArduino::getId() const
 	return _id;
 }
 
-int CCapteurArduino::getPin() const
+string CCapteurArduino::getPin() const
 {
 	return _pin;
 }
