@@ -1,0 +1,9 @@
+{
+    "arduino.commandPath": "C:\\Users\\meder\\AppData\\Local\\Programs\\Arduino IDE\\resources\\app\\lib\\backend\\resources\\arduino-cli.exe",
+    "files.associations": {
+        "*.ino": "cpp"
+    },
+    "C_Cpp.default.configurationProvider": "vscode-arduino.vscode-arduino-community",
+    "arduino.board": "arduino:renesas_uno:unor4wifi",
+    "arduino.port": "COM3"
+}
