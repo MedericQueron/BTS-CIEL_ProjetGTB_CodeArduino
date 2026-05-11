@@ -1,13 +1,20 @@
 #include "include/CAirQuality.h"
 #include "include/CLuminosite.h"
+#include "include/CESP32.h"
 
 CAirQuality SCD_30(1, "I2C");
 CLuminosite LightSensor(2, "A0");
+CESP32 Wifi_PGTB("WIFI-PGTB_2.4Ghz", "BtsCielGTB@2026");
 
 void setup() {
   Serial.begin(9600);
   delay(1000);
   while(!Serial);
+
+  Serial.println("Tentative de connexion WiFi...");
+  Wifi_PGTB.initialiser();
+
+  delay (1000);
 
   Serial.println("Initialisation du SCD30...");
   SCD_30.initialiser();
@@ -17,12 +24,12 @@ void setup() {
   Serial.print("Capteur ID: ");
   Serial.println(SCD_30.getId());
   Serial.print("Capteur Pin: ");
-  Serial.println(SCD_30.getPin().c_str());  
+  Serial.println(SCD_30.getPin().c_str());
 
   delay(2000);
 
-  Serial.println("Initialisation du Light Senror...");
-  LightSensor.initialiser();  
+  Serial.println("Initialisation du Light Sensor...");
+  LightSensor.initialiser();
 
   delay(1000);
 
@@ -36,6 +43,16 @@ void setup() {
 }
 
 void loop() {
+  if (!Wifi_PGTB.verifierConnexion()) {
+    static unsigned long lastWifiCheck = 0;
+    if (millis() - lastWifiCheck > 15000) {
+      Serial.println("WiFi déconnecté, tentative de reconnexion...");
+      Wifi_PGTB.connecter();
+      lastWifiCheck = millis();
+    }
+  }
+
+
   if (SCD_30.getValues() && LightSensor.getValue()) 
   {
     Serial.print("Temperature: "); 
@@ -46,8 +63,8 @@ void loop() {
     Serial.print(SCD_30.lireCO2());
     Serial.print(" ppm, Luminositee: ");
     Serial.print(LightSensor.lireLuminosite());
-    Serial.println(" lux");  
+    Serial.println(" lux");
   }
 
-  delay(3000);
+  delay(1000);
 }
