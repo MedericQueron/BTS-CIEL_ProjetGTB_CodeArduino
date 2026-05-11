@@ -1,13 +1,20 @@
 #include "include/CAirQuality.h"
 #include "include/CLuminosite.h"
+#include "include/CESP32.h"
 
 CAirQuality SCD_30(1, "I2C");
 CLuminosite LightSensor(2, "A0");
+CESP32 Wifi_PGTB("WIFI-PGTB_2.4Ghz", "BtsCielGTB@2026");
 
 void setup() {
   Serial.begin(9600);
   delay(1000);
   while(!Serial);
+
+  Serial.println("Tentative de connexion WiFi...");
+  Wifi_PGTB.initialiser();
+
+  delay (1000);
 
   Serial.println("Initialisation du SCD30...");
   SCD_30.initialiser();
@@ -21,7 +28,7 @@ void setup() {
 
   delay(2000);
 
-  Serial.println("Initialisation du Light Senror...");
+  Serial.println("Initialisation du Light Sensor...");
   LightSensor.initialiser();  
 
   delay(1000);
@@ -36,6 +43,16 @@ void setup() {
 }
 
 void loop() {
+  if (!Wifi_PGTB.verifierConnexion()) {
+    static unsigned long lastWifiCheck = 0;
+    if (millis() - lastWifiCheck > 15000) {
+      Serial.println("WiFi déconnecté, tentative de reconnexion...");
+      Wifi_PGTB.connecter();
+      lastWifiCheck = millis();
+    }
+  }
+  
+
   if (SCD_30.getValues() && LightSensor.getValue()) 
   {
     Serial.print("Temperature: "); 
@@ -49,5 +66,5 @@ void loop() {
     Serial.println(" lux");  
   }
 
-  delay(3000);
+  delay(1000);
 }
