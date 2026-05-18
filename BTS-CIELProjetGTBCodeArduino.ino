@@ -27,9 +27,14 @@ void loop() {
     float l = LightSensor.lireLuminosite();
 
     // Affichage sur le moniteur série
-    Serial.print("Temp: "); Serial.print(t);
-    Serial.print(" °C, CO2: "); Serial.print(c);
-    Serial.print(" ppm, Lux: "); Serial.println(l);
+    Serial.print("Temp: "); 
+    Serial.print(t);
+    Serial.print(" °C, Hum:"); 
+    Serial.print(h); 
+    Serial.print("CO2: "); 
+    Serial.print(c);
+    Serial.print(" ppm, Lux: "); 
+    Serial.println(l);
 
     // Mise à jour de l'écran LCD
     ecran.afficherDonnees(t, h, c, l);
