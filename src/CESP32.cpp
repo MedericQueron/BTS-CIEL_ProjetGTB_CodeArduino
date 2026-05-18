@@ -25,11 +25,9 @@ bool CESP32::connecter()
     }
 
     if (WiFi.status() == WL_CONNECTED) {
-        delay(2000);
+        delay(3000);
         _isConnected = true;
         Serial.println("\nWiFi connecte !");
-        Serial.print("Adresse IP : ");
-        Serial.println(WiFi.localIP());
         return true;
     } else {
         _isConnected = false;
