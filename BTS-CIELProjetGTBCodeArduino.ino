@@ -1,24 +1,63 @@
 #include "include/CAirQuality.h"
 #include "include/CLuminosite.h"
-#include "include/CAffichage.h" // Ajout de la classe d'affichage
+#include "include/CESP32.h"
+#include "include/CAffichage.h"
 
 CAirQuality SCD_30(1, "I2C");
 CLuminosite LightSensor(2, "A0");
-CAffichage ecran; // Instanciation de l'écran
+CESP32 Wifi_PGTB("WIFI-PGTB_2.4Ghz", "BtsCielGTB@2026");
+CAffichage ecran; 
 
 void setup() {
   Serial.begin(9600);
-  delay(1000);
   while(!Serial);
+  
+  delay(1000);
 
+  Serial.println("Tentative de connexion WiFi...");
+  Wifi_PGTB.initialiser();
+
+  delay (1000);
+
+  Serial.println("Initialisation du SCD30...");
   SCD_30.initialiser();
+  
+  Serial.print("Capteur ID: ");
+  Serial.println(SCD_30.getId());
+  Serial.print("Capteur Pin: ");
+  Serial.println(SCD_30.getPin().c_str());
+  
+  delay (1000);
+  
+  Serial.println("Initialisation du Light Sensor")
   LightSensor.initialiser();
-  ecran.initialiser(); // Initialisation de l'écran
 
+  Serial.print("Capteur ID: ");
+  Serial.println(LightSensor.getId());
+  Serial.print("Capteur Pin: ");
+  Serial.println(LightSensor.getPin().c_str());
+  
+  delay(1000);
+  
+  Serial.println("Initialisation de l'écran")
+  ecran.initialiser();   
+
+  delay(1000);
+ 
   Serial.println("Systeme de monitoring pret.");
 }
 
 void loop() {
+  if (!Wifi_PGTB.verifierConnexion()) {
+    static unsigned long lastWifiCheck = 0;
+    if (millis() - lastWifiCheck > 15000) {
+      Serial.println("WiFi déconnecté, tentative de reconnexion...");
+      Wifi_PGTB.connecter();
+      lastWifiCheck = millis();
+    }
+  }
+
+
   if (SCD_30.getValues() && LightSensor.getValue()) 
   {
     float t = SCD_30.lireTemperature();
