@@ -2,8 +2,7 @@
 
 
 CAirQuality::CAirQuality(int id, string pin) : CCapteurArduino(id, pin), _temperature(0.0f), _humidity(0.0f), _CO2(0.0f)
-{
-}
+{}
 
 CAirQuality::~CAirQuality() {}
 
