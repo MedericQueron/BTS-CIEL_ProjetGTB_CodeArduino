@@ -29,7 +29,7 @@ void setup() {
   
   delay (1000);
   
-  Serial.println("Initialisation du Light Sensor")
+  Serial.println("Initialisation du Light Sensor");
   LightSensor.initialiser();
 
   Serial.print("Capteur ID: ");
@@ -39,7 +39,7 @@ void setup() {
   
   delay(1000);
   
-  Serial.println("Initialisation de l'écran")
+  Serial.println("Initialisation de l'écran");
   ecran.initialiser();   
 
   delay(1000);
