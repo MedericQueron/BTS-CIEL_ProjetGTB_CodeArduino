@@ -1,27 +1,25 @@
 <?php
-// Page de détail d'une salle : capteurs, mesures et caméras
+// Page de détail d'une salle : capteurSs, mesures et caméras
 require_once __DIR__ . '/includes/security.php';
 require_once __DIR__ . '/includes/auth_check.php';
 require_once __DIR__ . '/config/database.php';
 
-// Validation de l'ID passé dans l'URL (?id=3)
-// FILTER_VALIDATE_INT retourne false si ce n'est pas un entier valide
 $salleId = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
 
 if (!$salleId || $salleId < 1) {
     die('Identifiant de salle invalide.');
 }
 
-// On récupère la salle — si elle n'existe pas, inutile de continuer
 $req = $conn->prepare("SELECT id, nom, type, open_for_all FROM salles WHERE id = :id");
 $req->execute([':id' => $salleId]);
-$salle = $req->fetch(PDO::FETCH_ASSOC);
+$salle = $req->fetch(PDO::FETCH_ASSOC); // Retourne une seule ligne (la salle)
 
+// Arrêt si l'ID ne correspond à aucune salle en base
 if (!$salle) {
     die('Salle introuvable.');
 }
 
-// Tous les capteurs rattachés à cette salle
+// Récupère tous les capteurs liés à la salle, triés alphabétiquement par type
 $req = $conn->prepare("
     SELECT id, type, unite, id_arduino, is_connected
     FROM capteurs
@@ -29,16 +27,15 @@ $req = $conn->prepare("
     ORDER BY type ASC
 ");
 $req->execute([':id_salle' => $salleId]);
-$capteurs = $req->fetchAll(PDO::FETCH_ASSOC);
+$capteurs = $req->fetchAll(PDO::FETCH_ASSOC); // Retourne toutes les lignes (plusieurs capteurs possibles)
 
-// Pour chaque capteur : stats + 10 dernières mesures
-$capteurStats   = [];
-$capteurMesures = [];
+$capteurStatsParType   = [];
+$capteurMesuresParType = [];
 
 foreach ($capteurs as $capteur) {
     $cid = (int) $capteur['id'];
 
-    // Statistiques groupées par type de mesure (température, CO2, etc.)
+    // Statistiques groupées par type de mesure
     $req = $conn->prepare("
         SELECT
             type_mesure,
@@ -52,21 +49,38 @@ foreach ($capteurs as $capteur) {
         ORDER BY type_mesure ASC
     ");
     $req->execute([':id_capteur' => $cid]);
-    $capteurStats[$cid] = $req->fetchAll(PDO::FETCH_ASSOC);
+    $stats = $req->fetchAll(PDO::FETCH_ASSOC);
 
-    // Les 10 mesures les plus récentes pour l'historique
+    // Indexer les stats par type_mesure
+    $capteurStatsParType[$cid] = [];
+    foreach ($stats as $s) {
+        $capteurStatsParType[$cid][$s['type_mesure']] = $s;
+    }
+
+    // 10 dernières mesures groupées par type_mesure
     $req = $conn->prepare("
         SELECT type_mesure, ROUND(valeur, 2) AS valeur, created_at
         FROM mesures
         WHERE id_capteur = :id_capteur
         ORDER BY created_at DESC
-        LIMIT 10
+        LIMIT 50
     ");
     $req->execute([':id_capteur' => $cid]);
-    $capteurMesures[$cid] = $req->fetchAll(PDO::FETCH_ASSOC);
+    $mesures = $req->fetchAll(PDO::FETCH_ASSOC);
+
+    // Indexer les mesures par type_mesure (max 10 par type)
+    $capteurMesuresParType[$cid] = [];
+    foreach ($mesures as $m) {
+        $t = $m['type_mesure'];
+        if (!isset($capteurMesuresParType[$cid][$t])) {
+            $capteurMesuresParType[$cid][$t] = [];
+        }
+        if (count($capteurMesuresParType[$cid][$t]) < 10) {
+            $capteurMesuresParType[$cid][$t][] = $m;
+        }
+    }
 }
 
-// Caméras installées dans la salle
 $req = $conn->prepare("
     SELECT id, nom, url_flux, camera_status
     FROM cameras
@@ -75,6 +89,22 @@ $req = $conn->prepare("
 ");
 $req->execute([':id_salle' => $salleId]);
 $cameras = $req->fetchAll(PDO::FETCH_ASSOC);
+
+// Mapping unité par type de mesure
+$uniteParType = [
+    'temperature' => '°C',
+    'humidite'    => '%',
+    'co2'         => 'ppm',
+    'luminosite'  => 'lux',
+];
+
+// Labels lisibles pour les types de mesure
+$labelParType = [
+    'temperature' => 'Température',
+    'humidite'    => 'Humidité',
+    'co2'         => 'CO₂',
+    'luminosite'  => 'Luminosité',
+];
 
 $pageTitle = 'Salle - ' . $salle['nom'];
 require_once __DIR__ . '/includes/header.php';
@@ -118,9 +148,15 @@ require_once __DIR__ . '/includes/navbar.php';
                         <div class="row g-3">
                             <?php foreach ($capteurs as $capteur): ?>
                                 <?php
-                                $cid     = (int) $capteur['id'];
-                                $stats   = $capteurStats[$cid];
-                                $mesures = $capteurMesures[$cid];
+                                $cid           = (int) $capteur['id'];
+                                $statsParType  = $capteurStatsParType[$cid]  ?? [];
+                                $mesuresParType = $capteurMesuresParType[$cid] ?? [];
+                                $typesDisponibles = array_unique(array_merge(
+                                    array_keys($statsParType),
+                                    array_keys($mesuresParType)
+                                ));
+                                sort($typesDisponibles);
+                                $premierType = $typesDisponibles[0] ?? null;
                                 ?>
                                 <div class="col-12">
                                     <div class="border rounded p-3">
@@ -130,8 +166,7 @@ require_once __DIR__ . '/includes/navbar.php';
                                             <div>
                                                 <h3 class="h6 fw-bold mb-1"><?= htmlspecialchars($capteur['type']) ?></h3>
                                                 <p class="text-secondary small mb-0">
-                                                    Unité : <?= htmlspecialchars($capteur['unite']) ?>
-                                                    &mdash; Arduino : <?= htmlspecialchars((string) $capteur['id_arduino']) ?>
+                                                    Arduino : <?= htmlspecialchars((string) $capteur['id_arduino']) ?>
                                                 </p>
                                             </div>
                                             <?php if ((int) $capteur['is_connected'] === 1): ?>
@@ -141,59 +176,97 @@ require_once __DIR__ . '/includes/navbar.php';
                                             <?php endif; ?>
                                         </div>
 
-                                        <?php if (empty($mesures)): ?>
+                                        <?php if (empty($typesDisponibles)): ?>
                                             <div class="alert alert-info mb-0">Aucune mesure disponible pour ce capteur.</div>
                                         <?php else: ?>
 
-                                            <!-- Tableau des statistiques (une ligne par type de mesure) -->
-                                            <h4 class="h6 text-secondary mb-2">Statistiques</h4>
-                                            <div class="table-responsive mb-3">
-                                                <table class="table table-sm table-bordered align-middle mb-0">
-                                                    <thead class="table-light">
-                                                        <tr>
-                                                            <th>Type de mesure</th>
-                                                            <th>Total relevés</th>
-                                                            <th>Min</th>
-                                                            <th>Max</th>
-                                                            <th>Moyenne</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        <?php foreach ($stats as $s): ?>
-                                                            <tr>
-                                                                <td><?= htmlspecialchars($s['type_mesure']) ?></td>
-                                                                <td><?= (int) $s['total'] ?></td>
-                                                                <td><?= htmlspecialchars((string) $s['valeur_min']) ?> <?= htmlspecialchars($capteur['unite']) ?></td>
-                                                                <td><?= htmlspecialchars((string) $s['valeur_max']) ?> <?= htmlspecialchars($capteur['unite']) ?></td>
-                                                                <td><?= htmlspecialchars((string) $s['valeur_moyenne']) ?> <?= htmlspecialchars($capteur['unite']) ?></td>
-                                                            </tr>
-                                                        <?php endforeach; ?>
-                                                    </tbody>
-                                                </table>
+                                            <!-- Menu déroulant de sélection du type de mesure -->
+                                            <div class="mb-3">
+                                                <label for="select-capteur-<?= $cid ?>" class="form-label fw-semibold text-secondary small mb-1">
+                                                    <i class="bi bi-sliders me-1"></i>Type de mesure
+                                                </label>
+                                                <select
+                                                    class="form-select form-select-sm w-auto"
+                                                    id="select-capteur-<?= $cid ?>"
+                                                    onchange="afficherMesure(<?= $cid ?>, this.value)"
+                                                >
+                                                    <?php foreach ($typesDisponibles as $type): ?>
+                                                        <option value="<?= htmlspecialchars($type) ?>">
+                                                            <?= htmlspecialchars($labelParType[$type] ?? ucfirst($type)) ?>
+                                                        </option>
+                                                    <?php endforeach; ?>
+                                                </select>
                                             </div>
 
-                                            <!-- Les 10 dernières mesures -->
-                                            <h4 class="h6 text-secondary mb-2">10 dernières mesures</h4>
-                                            <div class="table-responsive">
-                                                <table class="table table-sm table-bordered align-middle mb-0">
-                                                    <thead class="table-light">
-                                                        <tr>
-                                                            <th>Type de mesure</th>
-                                                            <th>Valeur</th>
-                                                            <th>Date</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        <?php foreach ($mesures as $m): ?>
-                                                            <tr>
-                                                                <td><?= htmlspecialchars($m['type_mesure']) ?></td>
-                                                                <td><?= htmlspecialchars((string) $m['valeur']) ?> <?= htmlspecialchars($capteur['unite']) ?></td>
-                                                                <td><?= htmlspecialchars((string) $m['created_at']) ?></td>
-                                                            </tr>
-                                                        <?php endforeach; ?>
-                                                    </tbody>
-                                                </table>
-                                            </div>
+                                            <!-- Sections de données par type de mesure -->
+                                            <?php foreach ($typesDisponibles as $type): ?>
+                                                <?php
+                                                $unite   = $uniteParType[$type] ?? $capteur['unite'];
+                                                $label   = $labelParType[$type] ?? ucfirst($type);
+                                                $stat    = $statsParType[$type]   ?? null;
+                                                $mesures = $mesuresParType[$type] ?? [];
+                                                $estVisible = ($type === $premierType);
+                                                ?>
+                                                <div
+                                                    id="section-<?= $cid ?>-<?= htmlspecialchars($type) ?>"
+                                                    class="section-mesure-capteur"
+                                                    style="display: <?= $estVisible ? 'block' : 'none' ?>;"
+                                                >
+                                                    <!-- Statistiques -->
+                                                    <?php if ($stat): ?>
+                                                        <h4 class="h6 text-secondary mb-2">
+                                                            Statistiques — <?= htmlspecialchars($label) ?>
+                                                        </h4>
+                                                        <div class="table-responsive mb-3">
+                                                            <table class="table table-sm table-bordered align-middle mb-0">
+                                                                <thead class="table-light">
+                                                                    <tr>
+                                                                        <th>Total relevés</th>
+                                                                        <th>Min</th>
+                                                                        <th>Max</th>
+                                                                        <th>Moyenne</th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody>
+                                                                    <tr>
+                                                                        <td><?= (int) $stat['total'] ?></td>
+                                                                        <td><?= htmlspecialchars((string) $stat['valeur_min']) ?> <?= htmlspecialchars($unite) ?></td>
+                                                                        <td><?= htmlspecialchars((string) $stat['valeur_max']) ?> <?= htmlspecialchars($unite) ?></td>
+                                                                        <td><?= htmlspecialchars((string) $stat['valeur_moyenne']) ?> <?= htmlspecialchars($unite) ?></td>
+                                                                    </tr>
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
+                                                    <?php endif; ?>
+
+                                                    <!-- 10 dernières mesures -->
+                                                    <?php if (!empty($mesures)): ?>
+                                                        <h4 class="h6 text-secondary mb-2">
+                                                            10 dernières mesures — <?= htmlspecialchars($label) ?>
+                                                        </h4>
+                                                        <div class="table-responsive">
+                                                            <table class="table table-sm table-bordered align-middle mb-0">
+                                                                <thead class="table-light">
+                                                                    <tr>
+                                                                        <th>Valeur</th>
+                                                                        <th>Date</th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody>
+                                                                    <?php foreach ($mesures as $m): ?>
+                                                                        <tr>
+                                                                            <td><?= htmlspecialchars((string) $m['valeur']) ?> <?= htmlspecialchars($unite) ?></td>
+                                                                            <td><?= htmlspecialchars((string) $m['created_at']) ?></td>
+                                                                        </tr>
+                                                                    <?php endforeach; ?>
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
+                                                    <?php endif; ?>
+
+                                                </div><!-- /section-<?= $cid ?>-<?= htmlspecialchars($type) ?> -->
+
+                                            <?php endforeach; ?>
 
                                         <?php endif; ?>
                                     </div>
@@ -247,8 +320,28 @@ require_once __DIR__ . '/includes/navbar.php';
     </div>
 </main>
 
-<!-- Actualisation automatique toutes les 30 secondes -->
 <script>
+    /**
+     * Affiche uniquement la section correspondant au type de mesure sélectionné
+     * pour le capteur donné, et masque les autres.
+     *
+     * @param {number} capteurId  - Identifiant du capteur
+     * @param {string} type       - Type de mesure sélectionné (ex: 'temperature')
+     */
+    function afficherMesure(capteurId, type) {
+        // Masquer toutes les sections de ce capteur
+        document.querySelectorAll(`[id^="section-${capteurId}-"]`).forEach(function (el) {
+            el.style.display = 'none';
+        });
+
+        // Afficher la section du type sélectionné
+        var cible = document.getElementById('section-' + capteurId + '-' + type);
+        if (cible) {
+            cible.style.display = 'block';
+        }
+    }
+
+    // Actualisation automatique toutes les 30 secondes
     setTimeout(function () {
         window.location.reload();
     }, 30000);
