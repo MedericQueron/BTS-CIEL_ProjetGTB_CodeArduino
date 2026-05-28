@@ -1,9 +1,8 @@
 <?php
 
-// Demare la session si elle n'est pas deja ouverte
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
+// ensure_session_started definit les flags du cookie (httponly, samesite, secure) avant session_start
+// security.php est toujours inclus avant ce fichier donc la fonction est disponible
+ensure_session_started();
 
 // Si aucun utilisateur est en session, il faut retourner a la connexion
 // empty() gere aussi le cas ou la clé n'existe pas, du coup pas besoin de isset() en plus

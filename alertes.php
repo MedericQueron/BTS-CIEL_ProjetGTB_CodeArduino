@@ -108,9 +108,9 @@ require_once __DIR__ . '/includes/navbar.php';
                                 // match() permet de choisir la couleur Bootstrap selon le niveau de l'alerte
                                 // c'est comme un switch mais en plus court
                                 $niveauClass = match ($alerte['niveau']) {
-                                    'critical' => 'danger',
-                                    'info'     => 'primary',
-                                    default    => 'warning', // warning si le niveau est pas reconnu
+                                    'critique'      => 'danger',
+                                    'info'          => 'primary',
+                                    default         => 'warning',
                                 };
                                 $resolved = (int) $alerte['is_resolved'] === 1;
                                 ?>

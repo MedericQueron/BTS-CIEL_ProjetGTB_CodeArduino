@@ -81,7 +81,7 @@ CREATE TABLE IF NOT EXISTS `alertes` (
     `message`            TEXT                               NOT NULL,
     `valeur_declencheur` DECIMAL(10, 4)                     NULL DEFAULT NULL,
     `seuil`              DECIMAL(10, 4)                     NULL DEFAULT NULL,
-    `niveau`             ENUM('info','warning','critical')  NOT NULL DEFAULT 'warning',
+    `niveau`             ENUM('info','avertissement','critique')  NOT NULL DEFAULT 'avertissement',
     `is_resolved`        TINYINT(1)                         NOT NULL DEFAULT 0,
     `created_at`         DATETIME                           NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `resolved_at`        DATETIME                           NULL DEFAULT NULL,
@@ -107,6 +107,25 @@ CREATE TABLE IF NOT EXISTS `cameras` (
     KEY `fk_cameras_salle` (`id_salle`),
     CONSTRAINT `fk_cameras_salle`
         FOREIGN KEY (`id_salle`) REFERENCES `salles` (`id`)
+        ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ------------------------------------------------------------
+-- Table : seuils
+-- Seuils d'alerte configurables par capteur et type de mesure
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `seuils` (
+    `id`          INT UNSIGNED  NOT NULL AUTO_INCREMENT,
+    `id_capteur`  INT UNSIGNED  NOT NULL,
+    `type_mesure` VARCHAR(100)  NOT NULL,
+    `valeur_min`  DECIMAL(10,4) NULL DEFAULT NULL,
+    `valeur_max`  DECIMAL(10,4) NULL DEFAULT NULL,
+    `niveau`      ENUM('info','avertissement','critique') NOT NULL DEFAULT 'avertissement',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uq_seuil` (`id_capteur`, `type_mesure`),
+    KEY `fk_seuils_capteur` (`id_capteur`),
+    CONSTRAINT `fk_seuils_capteur`
+        FOREIGN KEY (`id_capteur`) REFERENCES `capteurs` (`id`)
         ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -233,14 +252,27 @@ INSERT INTO `cameras` (`id_salle`, `nom`, `url_flux`, `camera_status`) VALUES
 -- ------------------------------------------------------------
 -- Alertes
 -- ------------------------------------------------------------
+-- ------------------------------------------------------------
+-- Seuils d'alerte de démonstration
+-- capteur 1 = SCD30 Salle Serveurs / capteur 2 = SCD30 Salle Réunion A
+-- ------------------------------------------------------------
+INSERT INTO `seuils` (`id_capteur`, `type_mesure`, `valeur_min`, `valeur_max`, `niveau`) VALUES
+(1, 'temperature', NULL,  27.0000, 'critique'),
+(1, 'humidite',    20.0000, 70.0000, 'avertissement'),
+(1, 'co2',         NULL, 1400.0000, 'avertissement'),
+(2, 'temperature', NULL,  26.0000, 'avertissement'),
+(2, 'humidite',    20.0000, 75.0000, 'info'),
+(2, 'co2',         NULL, 1200.0000, 'avertissement');
+
+-- ------------------------------------------------------------
 INSERT INTO `alertes` (`id_capteur`, `type_alerte`, `message`, `valeur_declencheur`, `seuil`, `niveau`, `is_resolved`, `created_at`, `resolved_at`) VALUES
 (1, 'Température élevée',
     'La température de la salle serveurs dépasse le seuil critique de 27 °C.',
-    27.80, 27.00, 'critical', 0, '2026-05-28 12:30:00', NULL),
+    27.80, 27.00, 'critique', 0, '2026-05-28 12:30:00', NULL),
 
 (1, 'CO₂ élevé',
     'Le taux de CO₂ de la salle serveurs dépasse 1 400 ppm. Vérifier la ventilation.',
-    1500.00, 1400.00, 'warning', 0, '2026-05-28 11:00:00', NULL),
+    1500.00, 1400.00, 'avertissement', 0, '2026-05-28 11:00:00', NULL),
 
 (2, 'CO₂ en hausse',
     'Le taux de CO₂ de la salle de réunion approche le seuil d'alerte.',
@@ -248,4 +280,4 @@ INSERT INTO `alertes` (`id_capteur`, `type_alerte`, `message`, `valeur_declenche
 
 (3, 'Capteur déconnecté',
     'Le capteur de luminosité du bureau direction ne répond plus.',
-    NULL, NULL, 'warning', 0, '2026-05-28 07:45:00', NULL);
+    NULL, NULL, 'avertissement', 0, '2026-05-28 07:45:00', NULL);

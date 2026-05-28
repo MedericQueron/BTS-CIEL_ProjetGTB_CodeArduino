@@ -34,7 +34,7 @@ $navItems = [
 $isAdmin = ($_SESSION['user_role'] ?? '') === 'admin';
 
 
-// Recupere les 10 dernieres alertes non résolues pour la cloche
+// Recupere les 10 dernieres alertes non résolues pour la cloche + le compte total réel
 $navAlertes = [];
 $navAlertesCount = 0;
 try {
@@ -54,7 +54,9 @@ try {
         LIMIT 10
     ");
     $navAlertes = $navQuery->fetchAll(PDO::FETCH_ASSOC);
-    $navAlertesCount = count($navAlertes);
+
+    // COUNT séparé pour afficher le vrai nombre même si > 10
+    $navAlertesCount = (int) $conn->query("SELECT COUNT(*) FROM alertes WHERE is_resolved = 0")->fetchColumn();
 } catch (PDOException $e) {
     // si la table n'existe pas encore on affiche juste rien
 }
@@ -125,7 +127,7 @@ try {
                             <?php foreach ($navAlertes as $navAlerte): ?>
                                 <?php
                                 $badgeClass = match ($navAlerte['niveau']) {
-                                    'critical' => 'danger',
+                                    'critique' => 'danger',
                                     'info'     => 'primary',
                                     default    => 'warning',
                                 };

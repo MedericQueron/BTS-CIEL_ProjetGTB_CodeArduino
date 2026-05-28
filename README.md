@@ -37,7 +37,6 @@ L'objectif est de centraliser les informations techniques du bâtiment pour cons
 | Fichier | Rôle |
 | --- | --- |
 | `login.php` | Connexion utilisateur avec protection CSRF et anti-brute-force |
-| `register.php` | Création de compte avec validation des champs |
 | `forgot-password.php` | Page d'aide pour mot de passe oublié |
 | `logout.php` | Déconnexion sécurisée en POST avec token CSRF |
 | `dashboard.php` | Tableau de bord après connexion |
@@ -77,7 +76,6 @@ L'objectif est de centraliser les informations techniques du bâtiment pour cons
 +-- forgot-password.php
 +-- login.php
 +-- logout.php
-+-- register.php
 +-- salle-detail.php
 +-- salles.php
 ```
@@ -128,6 +126,7 @@ Tables de la base de données :
 | `mesures` | Valeurs relevées par les capteurs au fil du temps |
 | `cameras` | Caméras IP installées dans les salles |
 | `alertes` | Alertes générées quand un seuil est dépassé |
+| `seuils` | Seuils d'alerte configurables par capteur et type de mesure |
 | `login_attempts` | Tentatives de connexion échouées pour l'anti-brute-force |
 
 Le fichier `gtb.sql` contient la définition complète des tables ainsi que des données de démonstration.
@@ -163,12 +162,58 @@ La page de détail d'une salle affiche pour chaque type de mesure :
 
 ---
 
+## API — Réception des trames Arduino
+
+L'Arduino Uno R4 WiFi envoie ses mesures via une requête HTTP POST à l'endpoint suivant :
+
+```
+POST /api/mesures.php
+Header : X-GTB-Key: <valeur de GTB_API_KEY>
+Body   : application/json
+```
+
+Format JSON attendu :
+
+```json
+{
+  "id_arduino": "ARD-001",
+  "temperature": 23.5,
+  "humidite": 55.2,
+  "co2": 920.0,
+  "luminosite": 480.0
+}
+```
+
+Les champs de mesure sont optionnels (envoyer uniquement ceux que le capteur produit).
+
+Réponse en cas de succès :
+
+```json
+{ "ok": true, "inserted": 3 }
+```
+
+Le serveur insère les mesures dans la table `mesures`, marque le capteur comme connecté (`is_connected = 1`), génère des alertes si les seuils configurés sont dépassés, et résout automatiquement les alertes existantes quand les valeurs reviennent dans les limites.
+
+### Variable d'environnement `GTB_API_KEY`
+
+La clé API doit être définie dans l'environnement du serveur Apache (WAMP) :
+
+Dans `C:\wamp64\bin\apache\apacheX.X.X\conf\httpd.conf` ou dans un fichier `.htaccess` :
+
+```apache
+SetEnv GTB_API_KEY votre_cle_secrete_ici
+```
+
+Ou via les variables d'environnement système Windows avant de démarrer WAMP.
+
+---
+
 ## Communication
 
 Le projet prévoit une communication par WiFi entre les éléments du système.
 Le protocole HTTPS est prévu pour sécuriser les échanges entre les composants.
-Les mesures sont envoyées depuis l'Arduino vers la base de données MySQL directement côté serveur.
-Les alertes sont générées côté serveur lors de la réception des mesures, sans passer par un endpoint HTTP côté client.
+Les mesures sont envoyées depuis l'Arduino vers la base de données MySQL via l'endpoint `api/mesures.php`.
+Les alertes sont générées et résolues automatiquement côté serveur à chaque réception de trame.
 
 ---
 
