@@ -11,3 +11,11 @@ if (empty($_SESSION['user_id'])) {
     header('Location: login.php');
     exit(); // le exit est important sinon le reste de la page s'execute quand meme
 }
+
+function require_admin(): void
+{
+    if (($_SESSION['user_role'] ?? '') !== 'admin') {
+        header('Location: dashboard.php');
+        exit();
+    }
+}

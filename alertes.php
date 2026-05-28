@@ -3,8 +3,41 @@ require_once __DIR__ . '/includes/security.php';
 require_once __DIR__ . '/includes/auth_check.php';
 require_once __DIR__ . '/config/database.php';
 
-$alertes = [];
-$erreur = '';
+$alertes    = [];
+$erreur     = '';
+$succes     = '';
+$isAdmin    = ($_SESSION['user_role'] ?? '') === 'admin';
+$csrf_token = get_csrf_token();
+
+// --- Changement de statut d'une alerte (admin uniquement) ---
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isAdmin) {
+    if (!is_valid_csrf_token($_POST['csrf_token'] ?? null)) {
+        $erreur = "La session a expiré ou la requête est invalide.";
+    } else {
+        $alerteId  = (int) ($_POST['alerte_id'] ?? 0);
+        $newStatus = (int) ($_POST['new_status'] ?? 0);
+
+        if ($alerteId <= 0 || !in_array($newStatus, [0, 1], true)) {
+            $erreur = "Données invalides.";
+        } else {
+            try {
+                if ($newStatus === 1) {
+                    $stmt = $conn->prepare(
+                        "UPDATE alertes SET is_resolved = 1, resolved_at = NOW() WHERE id = :id"
+                    );
+                } else {
+                    $stmt = $conn->prepare(
+                        "UPDATE alertes SET is_resolved = 0, resolved_at = NULL WHERE id = :id"
+                    );
+                }
+                $stmt->execute([':id' => $alerteId]);
+                $succes = "Statut de l'alerte mis à jour.";
+            } catch (PDOException $e) {
+                $erreur = "Une erreur est survenue lors de la mise à jour.";
+            }
+        }
+    }
+}
 
 try {
     $query = $conn->query("
@@ -51,6 +84,12 @@ require_once __DIR__ . '/includes/navbar.php';
         <div class="col-12">
             <div class="card shadow-sm">
                 <div class="card-body p-4">
+
+                    <?php if (!empty($succes)): ?>
+                        <div class="alert alert-success" role="alert">
+                            <?= htmlspecialchars($succes) ?>
+                        </div>
+                    <?php endif; ?>
 
                     <?php if (!empty($erreur)): ?>
                         <div class="alert alert-danger mb-0" role="alert">
@@ -106,20 +145,33 @@ require_once __DIR__ . '/includes/navbar.php';
                                             </p>
                                         </div>
 
-                                        <div class="text-end">
-                                            <?php if ($resolved): ?>
-                                                <span class="badge text-bg-success">Résolue</span>
-                                                <?php if ($alerte['resolved_at']): ?>
-                                                    <p class="text-secondary small mb-0 mt-1">
-                                                        le <?= htmlspecialchars($alerte['resolved_at']) ?>
-                                                    </p>
+                                        <div class="text-end d-flex flex-column align-items-end gap-2">
+                                            <div>
+                                                <?php if ($resolved): ?>
+                                                    <span class="badge text-bg-success">Résolue</span>
+                                                    <?php if ($alerte['resolved_at']): ?>
+                                                        <p class="text-secondary small mb-0 mt-1">
+                                                            le <?= htmlspecialchars($alerte['resolved_at']) ?>
+                                                        </p>
+                                                    <?php endif; ?>
+                                                <?php else: ?>
+                                                    <span class="badge text-bg-danger">Active</span>
                                                 <?php endif; ?>
-                                            <?php else: ?>
-                                                <span class="badge text-bg-danger">Active</span>
+                                                <p class="text-secondary small mb-0 mt-1">
+                                                    <?= htmlspecialchars($alerte['created_at']) ?>
+                                                </p>
+                                            </div>
+
+                                            <?php if ($isAdmin): ?>
+                                                <form method="post" action="">
+                                                    <input type="hidden" name="csrf_token"  value="<?= htmlspecialchars($csrf_token) ?>">
+                                                    <input type="hidden" name="alerte_id"   value="<?= (int) $alerte['id'] ?>">
+                                                    <input type="hidden" name="new_status"  value="<?= $resolved ? '0' : '1' ?>">
+                                                    <button type="submit" class="btn btn-sm <?= $resolved ? 'btn-outline-secondary' : 'btn-outline-success' ?>">
+                                                        <?= $resolved ? 'Marquer comme active' : 'Marquer comme résolue' ?>
+                                                    </button>
+                                                </form>
                                             <?php endif; ?>
-                                            <p class="text-secondary small mb-0 mt-1">
-                                                <?= htmlspecialchars($alerte['created_at']) ?>
-                                            </p>
                                         </div>
                                     </div>
                                 </div>

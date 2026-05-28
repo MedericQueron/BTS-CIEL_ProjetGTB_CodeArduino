@@ -28,9 +28,11 @@ if (!empty($_SESSION['user_id'])) {
 $navItems = [
     'dashboard.php' => 'Tableau de bord',
     'salles.php' => 'Salles',
-    'cameras.php' => 'Caméras',
     'alertes.php' => 'Alertes',
 ];
+
+$isAdmin = ($_SESSION['user_role'] ?? '') === 'admin';
+
 
 // Recupere les 10 dernieres alertes non résolues pour la cloche
 $navAlertes = [];
@@ -78,6 +80,20 @@ try {
                         </a>
                     </li>
                 <?php endforeach; ?>
+
+                <li class="nav-item">
+                    <a class="nav-link <?= $currentPage === 'cameras.php' ? 'active fw-semibold' : '' ?>" href="cameras.php">
+                        Caméras
+                    </a>
+                </li>
+
+                <?php if ($isAdmin): ?>
+                    <li class="nav-item">
+                        <a class="nav-link <?= $currentPage === 'admin.php' ? 'active fw-semibold' : '' ?>" href="admin.php">
+                            Administration
+                        </a>
+                    </li>
+                <?php endif; ?>
             </ul>
 
 <!-- Cloche de notifications + menu utilisateur -->

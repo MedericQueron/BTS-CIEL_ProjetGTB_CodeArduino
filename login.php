@@ -76,7 +76,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($erreur === '') {
         try {
             // Recherche de l'utilisateur avec son email
-            $query = $conn->prepare("SELECT id, email, passwrd FROM users WHERE email = :email");
+            $query = $conn->prepare("SELECT id, email, passwrd, role FROM users WHERE email = :email");
             $query->execute([':email' => $email]);
             $user = $query->fetch(PDO::FETCH_ASSOC);
 
@@ -88,7 +88,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 // session_regenerate_id empeche le "session fixation", vu en cours
                 session_regenerate_id(true);
-                $_SESSION['user_id'] = $user['id'];
+                $_SESSION['user_id']   = $user['id'];
+                $_SESSION['user_role'] = $user['role'];
                 set_flash_message('success', 'Connexion réussie.');
 
                 header('Location: dashboard.php');
@@ -145,10 +146,6 @@ require_once __DIR__ . '/includes/header.php';
                         <button type="submit" class="btn btn-primary w-100 fw-bold py-2">Se connecter</button>
                     </form>
 
-                    <p class="text-center text-secondary mt-4 mb-0">
-                        Pas encore de compte ?
-                        <a href="register.php" class="fw-semibold">Créer un compte</a>
-                    </p>
                 </div>
             </div>
         </div>

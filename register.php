@@ -1,10 +1,14 @@
 <?php
 // Fichiers utilises pour la securite et la connexion a la base
 require_once __DIR__ . '/includes/security.php';
+require_once __DIR__ . '/includes/auth_check.php';
 require_once __DIR__ . '/config/database.php';
 
 // Demarage de la session si besoin
 ensure_session_started();
+
+// Réservé aux administrateurs
+require_admin();
 
 $erreur = '';
 $username = '';
@@ -50,8 +54,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ':passwrd' => $hash,
             ]);
 
-            set_flash_message('success', 'Compte créé avec succès, vous pouvez vous connecter.');
-            header('Location: login.php');
+            set_flash_message('success', 'Compte utilisateur créé avec succès.');
+            header('Location: admin.php');
             exit();
         } catch (PDOException $e) {
             if ($e->getCode() === '23000') {
@@ -116,8 +120,7 @@ require_once __DIR__ . '/includes/header.php';
                     </form>
 
                     <p class="text-center text-secondary mt-4 mb-0">
-                        Déjà un compte ?
-                        <a href="login.php" class="fw-semibold">Se connecter</a>
+                        <a href="admin.php" class="fw-semibold">Retour au panel admin</a>
                     </p>
                 </div>
             </div>
