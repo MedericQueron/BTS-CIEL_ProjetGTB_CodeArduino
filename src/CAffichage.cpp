@@ -33,7 +33,7 @@ void CAffichage::afficherDonnees(float temp, float hum, float co2, float lux) {
 
 void CAffichage::alerteCO2(float co2) {
     if (co2 > 1500) {
-        _lcd.setRGB(255, 0, 0); // Rouge si air vicié
+        _lcd.setRGB(255, 0, 0);
     } else {
         _lcd.setRGB(255, 255, 255);
     }

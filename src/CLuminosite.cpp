@@ -21,7 +21,7 @@ bool CLuminosite::getValue()
     else if (_pin == "A2") pinAnalogique = A2;
     else if (_pin == "A3") pinAnalogique = A3;
     
-    else pinAnalogique = A0; // Par défaut
+    else pinAnalogique = A0; 
 
     
     _value[0] = analogRead(pinAnalogique);

@@ -5,10 +5,9 @@ CESP32::CESP32(string ssid, string password) : _ssid(ssid), _password(password),
 
 CESP32::~CESP32() {}
 
-void CESP32::initialiser()
+bool CESP32::initialiser()
 {
-    // On force le mode station pour que l'ESP32 se connecte à un point d'accès
-    this->connecter();
+    return this->connecter();
 }
 
 bool CESP32::connecter()
@@ -17,21 +16,17 @@ bool CESP32::connecter()
     WiFi.begin(_ssid.c_str(), _password.c_str());
 
     int tentatives = 0;
-    // On attend la connexion pendant 10 secondes maximum (20 * 500ms)
     while (WiFi.status() != WL_CONNECTED && tentatives < 20) {
         delay(500);
-        Serial.print(".");
         tentatives++;
     }
 
     if (WiFi.status() == WL_CONNECTED) {
         delay(3000);
         _isConnected = true;
-        Serial.println("\nWiFi connecte !");
         return true;
     } else {
         _isConnected = false;
-        Serial.println("\nEchec de la connexion WiFi.");
         return false;
     }
 }
