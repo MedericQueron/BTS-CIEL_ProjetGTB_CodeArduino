@@ -5,7 +5,7 @@ CArduino::CArduino(int id, const CAirQuality& airQualitySensor, const CLuminosit
 
 CArduino::~CArduino() {}
 
-void CArduino::initialiser() {
+void CArduino::initialiser() { // Initialise tous les composants et tente de se connecter 1 fois au WiFi
     _wifi.initialiser();
     _isConnected = _wifi.verifierConnexion();
     _airQualitySensor.initialiser();
@@ -13,19 +13,19 @@ void CArduino::initialiser() {
     _screen.initialiser();
 }
 
-void CArduino::connexion() {
-    if (_isConnected == false)
+void CArduino::connexion() { // Tente de se connecter au WiFi tant que la connexion n'est pas établie
+    while (_isConnected == false) 
     {
         _isConnected = _wifi.connecter();
     }    
 }
 
-void CArduino::lireCapteurs() {
+void CArduino::lireCapteurs() { // Lit les données des capteurs et les stocke dans les attributs correspondants
     _airQualitySensor.getValues();
     _lightSensor.getValue();
 }
 
-void CArduino::afficherDonnees() const {
+void CArduino::afficherDonnees() const {   // Affiche les données sur l'écran LCD
     _screen.afficherDonnees(
         _airQualitySensor.lireTemperature(), 
         _airQualitySensor.lireHumidity(), 
@@ -35,7 +35,7 @@ void CArduino::afficherDonnees() const {
     _screen.alerteCO2(_airQualitySensor.lireCO2());
 }
 
-void CArduino::envoyerDonnees() const {
+void CArduino::envoyerDonnees() const { // Envoie les données au serveur via HTTP
     if (!_isConnected) {
         return;
     }

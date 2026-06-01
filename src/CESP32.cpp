@@ -5,12 +5,12 @@ CESP32::CESP32(string ssid, string password) : _ssid(ssid), _password(password),
 
 CESP32::~CESP32() {}
 
-bool CESP32::initialiser()
+bool CESP32::initialiser() // Initialise la connexion WiFi en tentant de se connecter immédiatement
 {
     return this->connecter();
 }
 
-bool CESP32::connecter()
+bool CESP32::connecter() // Tente de se connecter au WiFi en utilisant les informations d'identification fournies
 {
     // WiFi.begin attend des char* (C-string), d'où l'usage de c_str()
     WiFi.begin(_ssid.c_str(), _password.c_str());
@@ -31,13 +31,13 @@ bool CESP32::connecter()
     }
 }
 
-bool CESP32::verifierConnexion()
+bool CESP32::verifierConnexion() // Vérifie si la connexion WiFi est toujours active
 {
     _isConnected = (WiFi.status() == WL_CONNECTED);
     return _isConnected;
 }
 
-string CESP32::getIP() const
+string CESP32::getIP() const 
 {
     if (WiFi.status() == WL_CONNECTED) {
         return string(WiFi.localIP().toString().c_str());
