@@ -2,12 +2,11 @@
 
 
 CAirQuality::CAirQuality(int id, string pin) : CCapteurArduino(id, pin), _temperature(0.0f), _humidity(0.0f), _CO2(0.0f)
-{
-}
+{}
 
 CAirQuality::~CAirQuality() {}
 
-void CAirQuality::initialiser()
+void CAirQuality::initialiser() // Initialise le capteur SCD30 et configure les paramètres de mesure
 {
 	Wire.begin();
 	Wire.setClock(5000);
@@ -18,7 +17,7 @@ void CAirQuality::initialiser()
 	scd30.setMeasurementInterval(2);
 }
 
-bool CAirQuality::getValues()
+bool CAirQuality::getValues() // Lit les données du capteur SCD30 et les stocke dans les attributs correspondants
 {
 	if (scd30.isAvailable()) {
 		scd30.getCarbonDioxideConcentration(_value);
@@ -33,17 +32,17 @@ bool CAirQuality::getValues()
 	return false;
 }
 
-float CAirQuality::lireTemperature() const
+float CAirQuality::lireTemperature() const // Retourne la température mesurée par le capteur SCD30
 {
-		return _temperature;
+	return _temperature;
 }
 
-float CAirQuality::lireHumidity() const
+float CAirQuality::lireHumidity() const // Retourne l'humidité mesurée par le capteur SCD30
 {
 	return _humidity;
 }
 
-float CAirQuality::lireCO2() const
+float CAirQuality::lireCO2() const // Retourne la concentration de CO2 mesurée par le capteur SCD30
 {
 	return _CO2;
 }

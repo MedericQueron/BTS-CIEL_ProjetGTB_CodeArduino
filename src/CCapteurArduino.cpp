@@ -7,7 +7,7 @@ CCapteurArduino::CCapteurArduino(int id, string pin) : _id(id), _pin(pin), _isCo
 
 CCapteurArduino::~CCapteurArduino() {}
 
-void CCapteurArduino::initialiser()
+void CCapteurArduino::initialiser() // Initialise le capteur en définissant le mode du pin et en établissant une connexion fictive
 {
 	_isConnected = true;
 	_pinmode = true;
@@ -23,12 +23,12 @@ string CCapteurArduino::getPin() const
 	return _pin;
 }
 
-float CCapteurArduino::getValue(int index)
+float CCapteurArduino::getValue(int index) 
 {
 	return _value[index];
 }
 
-bool CCapteurArduino::getIsConnected() const
+bool CCapteurArduino::getIsConnected() const 
 {
 	return _isConnected;
 }
