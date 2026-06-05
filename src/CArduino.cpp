@@ -14,7 +14,7 @@ void CArduino::initialiser() { // Initialise tous les composants et tente de se 
 }
 
 void CArduino::connexion() { // Tente de se connecter au WiFi tant que la connexion n'est pas établie
-    while (_isConnected == false) 
+    if (_isConnected == false) 
     {
         _isConnected = _wifi.connecter();
     }    
@@ -35,12 +35,9 @@ void CArduino::afficherDonnees() {   // Affiche les données sur l'écran LCD
     _screen.alerteCO2(_airQualitySensor.lireCO2());
 }
 
-void CArduino::envoyerDonnees() const { // Envoie les données au serveur via HTTP
-    if (!_isConnected) {
-        return;
-    }
-
-    _httpClient.envoyerDonnees(
+bool CArduino::envoyerDonnees() const { // Envoie les données au serveur via HTTP
+    
+    return _httpClient.envoyerDonnees(
         _airQualitySensor.lireTemperature(), 
         _airQualitySensor.lireHumidity(), 
         _airQualitySensor.lireCO2(), 

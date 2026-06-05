@@ -9,11 +9,12 @@ using namespace std;
 class CHTTP {
 private:
 
-    String _serverUrl;
+    String _serverHost;
+    String _serverPath;
 
 public:
 
-    CHTTP(String url);
+    CHTTP(String serverHost, String serverPath);
 
     bool envoyerDonnees(float temperature, float humidite, int co2, int luminosite) const;
 };

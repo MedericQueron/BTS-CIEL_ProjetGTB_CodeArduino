@@ -27,7 +27,7 @@ public:
 
     void lireCapteurs();
     void afficherDonnees();
-    void envoyerDonnees() const;
+    bool envoyerDonnees() const;
 
     int getId() const;
     bool getIsConnected() const;

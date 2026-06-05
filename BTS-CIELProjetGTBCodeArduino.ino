@@ -2,9 +2,10 @@
 
 CAirQuality SCD_30(1, "I2C");
 CLuminosite LightSensor(2, "A0");
+//CESP32 Wifi_PGTB("OPPO Reno8 5G", "jean1611");
 CESP32 Wifi_PGTB("WIFI-PGTB_2.4Ghz", "BtsCielGTB@2026"); // paramètre 1 = SSID du réseau WiFi, paramètre 2 = mot de passe du réseau WiFi
 CAffichage ecran;
-CHTTP httpClient("http://192.168.3.60/gtb/api/mesures.php"); // URL du serveur à laquelle les données seront envoyées 
+CHTTP httpClient("http://192.168.3.60","/gtb/api/mesures.php"); // URL du serveur à laquelle les données seront envoyées 
 
 CArduino monArduino(1, SCD_30, LightSensor, Wifi_PGTB, ecran, httpClient);
 
@@ -30,12 +31,21 @@ void loop() {
 
   monArduino.lireCapteurs();
   monArduino.afficherDonnees();
+  Serial.println("affichage good");
   
   while (monArduino.getIsConnected() == false)
   {
+    Serial.println("Tentative de Connexion...");
     monArduino.connexion();
-  }  
-  monArduino.envoyerDonnees();
+    Serial.println("Connexion échoué");
+  }
+  Serial.println("Wifi good");
+
+  if (monArduino.envoyerDonnees()) {
+    Serial.println("Données envoyées avec succès");
+  } 
+  
+  
   //delay (600000); // Attendre 10 minutes avant de lire à nouveau les capteurs et d'envoyer les données au serveur
-  delay(20000);
+  delay(2000);
 }
