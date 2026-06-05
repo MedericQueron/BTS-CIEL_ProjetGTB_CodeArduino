@@ -19,14 +19,14 @@ private:
     CHTTP _httpClient;
 
 public:
-    CArduino(int id, CAirQuality airQualitySensor, CLuminosite lightSensor, CESP32 wifi, CAffichage screen, CHTTP httpClient);
+    CArduino(int id, const CAirQuality& airQualitySensor, const CLuminosite& lightSensor, const CESP32& wifi, const CAffichage& screen, const CHTTP&  httpClient);
     ~CArduino();
 
     void initialiser();
     void connexion();
 
     void lireCapteurs();
-    void afficherDonnees() const;
+    void afficherDonnees();
     void envoyerDonnees() const;
 
     int getId() const;

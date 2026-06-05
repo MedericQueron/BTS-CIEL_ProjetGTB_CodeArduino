@@ -2,8 +2,8 @@
 #define CHTTP_H
 
 #include <Arduino.h>
+#include <ArduinoHttpClient.h>
 #include <iostream>
-#include <HTTPClient.h>
 
 using namespace std;
 class CHTTP {
@@ -15,7 +15,7 @@ public:
 
     CHTTP(String url);
 
-    bool envoyerDonnees(float temperature, float humidite, int co2, int luminosite) ;
+    bool envoyerDonnees(float temperature, float humidite, int co2, int luminosite) const;
 };
 
 #endif // CHTTP_H

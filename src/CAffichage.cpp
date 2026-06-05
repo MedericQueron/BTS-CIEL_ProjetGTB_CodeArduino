@@ -9,7 +9,7 @@ void CAffichage::initialiser() { // Initialise l'écran LCD et affiche un messag
     delay(1000);
 }
 
-void CAffichage::afficherDonnees(float temp, float hum, float co2, float lux) { // Affiche les données sur l'écran LCD
+void CAffichage::afficherDonnees(float temp, float hum, float co2, float lux){ // Affiche les données sur l'écran LCD
     _lcd.clear();
     // Ligne 1 : Température et Humidité
     _lcd.setCursor(0, 0);
@@ -31,7 +31,7 @@ void CAffichage::afficherDonnees(float temp, float hum, float co2, float lux) { 
     _lcd.print((int)lux);
 }
 
-void CAffichage::alerteCO2(float co2) { // Change la couleur du rétroéclairage en fonction du niveau de CO2
+void CAffichage::alerteCO2(float co2){ // Change la couleur du rétroéclairage en fonction du niveau de CO2
     if (co2 > 1500) {
         _lcd.setRGB(255, 0, 0); //si le CO2 est supérieur à 1500 ppm, le rétroéclairage devient rouge
     } else {

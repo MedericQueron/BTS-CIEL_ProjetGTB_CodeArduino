@@ -4,9 +4,9 @@ CAirQuality SCD_30(1, "I2C");
 CLuminosite LightSensor(2, "A0");
 CESP32 Wifi_PGTB("WIFI-PGTB_2.4Ghz", "BtsCielGTB@2026"); // paramètre 1 = SSID du réseau WiFi, paramètre 2 = mot de passe du réseau WiFi
 CAffichage ecran;
-CHTTP httpClient("http://"); // URL du serveur à laquelle les données seront envoyées 
+CHTTP httpClient("http://192.168.3.121/gtb/api/mesures.php"); // URL du serveur à laquelle les données seront envoyées 
 
-CArduino arduino(1, SCD_30, LightSensor, Wifi_PGTB, ecran, httpClient);
+CArduino monArduino(1, SCD_30, LightSensor, Wifi_PGTB, ecran, httpClient);
 
 void setup() {
   /*
@@ -17,7 +17,7 @@ void setup() {
   */
   Serial.begin(9600);
   while(!Serial);
-  arduino.initialiser();
+  monArduino.initialiser();
 }
 
 void loop() { 
@@ -28,13 +28,14 @@ void loop() {
   4. Envoyer les données au serveur via HTTP POST.
   */
 
-  arduino.lireCapteurs();
-  arduino.afficherDonnees();
+  monArduino.lireCapteurs();
+  monArduino.afficherDonnees();
   
-  while (arduino.getIsConnected() == false)
+  while (monArduino.getIsConnected() == false)
   {
-    arduino.connexion();
+    monArduino.connexion();
   }  
-  arduino.envoyerDonnees();
-  delay (600000); 
+  monArduino.envoyerDonnees();
+  //delay (600000); // Attendre 10 minutes avant de lire à nouveau les capteurs et d'envoyer les données au serveur
+  delay(20000);
 }

@@ -18,7 +18,7 @@ public:
     CESP32(string ssid, string password);
     ~CESP32();
 
-    void initialiser();
+    bool initialiser();
     bool connecter();
     bool verifierConnexion();
     string getIP() const;

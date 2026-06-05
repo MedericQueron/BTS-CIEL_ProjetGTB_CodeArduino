@@ -1,4 +1,4 @@
-#include <../include/CArduino.h>
+#include "../include/CArduino.h"
 
 CArduino::CArduino(int id, const CAirQuality& airQualitySensor, const CLuminosite& lightSensor, const CESP32& wifi, const CAffichage& screen, const CHTTP& httpClient)
     : _id(id), _isConnected(false), _airQualitySensor(airQualitySensor), _lightSensor(lightSensor), _wifi(wifi), _screen(screen), _httpClient(httpClient) {}
@@ -25,7 +25,7 @@ void CArduino::lireCapteurs() { // Lit les données des capteurs et les stocke d
     _lightSensor.getValue();
 }
 
-void CArduino::afficherDonnees() const {   // Affiche les données sur l'écran LCD
+void CArduino::afficherDonnees() {   // Affiche les données sur l'écran LCD
     _screen.afficherDonnees(
         _airQualitySensor.lireTemperature(), 
         _airQualitySensor.lireHumidity(), 
