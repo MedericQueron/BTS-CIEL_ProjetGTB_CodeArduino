@@ -15,12 +15,18 @@ bool CHTTP::envoyerDonnees(float temperature, float humidite, int co2, int lumin
         WiFiClient wifiClient;
         HttpClient http(wifiClient, _serverUrl, 80);
 
-        String trame = "{\"temperature\":" + String(temperature, 1) +
+        http.beginRequest();
+        http.post("/gtb/api/mesures.php");
+        http.sendHeader("Content-Type", "application/json");
+        http.sendHeader("X-GTB-Key", "d671f753fd4f0349fdf4f4daa2268a3e2ab4dd9506fd1ffaea5d62e4732f9a20");
+
+        String trame = "{\"id_arduino\":\"arduino_1\","
+                       "\"temperature\":" + String(temperature, 1) +
                        ",\"humidite\":" + String(humidite, 0) +
                        ",\"co2\":" + String(co2) +
-                       ",\"luminosite\":" + String(luminosite) +
-                       "}";
+                       ",\"luminosite\":" + String(luminosite) + "}";
 
+                       
         http.post("/", "application/json", trame);
         int httpResponseCode = http.responseStatusCode();
         http.stop();
